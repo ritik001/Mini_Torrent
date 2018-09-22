@@ -1,31 +1,31 @@
 //      ntohs :-   u_short from TCP/IP network byte order to host byte order
-/*      inet_aton() converts the Internet host address cp from the IPv4 numbers-and-dots notation into binary form (in network byte order) 
-        and stores it in the structure that inp points to.*/ 
 
-//The in_port_t and in_addr_t types , in_addr structure are defined as in <netinet/in.h>.
+inet_aton() converts the Internet host address cp from the IPv4 numbers-and-dots notation into binary form (in network byte order) 
+and stores it in the structure that inp points to.
 
-
-
+The in_port_t and in_addr_t types , in_addr structure are defined as in <netinet/in.h>.
 
 
 
+ifstream input_file("students.data", ios::binary);
+student_t master[3];
+input_file.read((char*)&master, sizeof(master));         
+
+for (size_t idx = 0; idx < 3; idx++)
+{
+    // If you wanted to search for specific records, 
+    // you should do it here! if (idx == 2) ...
+
+    cout << "Record #" << idx << endl;
+    cout << "Name: " << master[idx].name << endl;
+    cout << "Age: " << master[idx].age << endl;
+    cout << "Grades: " << endl;
+    for (size_t i = 0; i < master[idx].grades.size(); i++)
+        cout << master[idx].grades[i] << " ";
+    cout << endl << endl;
+} 
 
 
 
-   ifstream input_file("students.data", ios::binary);
-    student_t master[3];
-    input_file.read((char*)&master, sizeof(master));         
 
-    for (size_t idx = 0; idx < 3; idx++)
-    {
-        // If you wanted to search for specific records, 
-        // you should do it here! if (idx == 2) ...
 
-        cout << "Record #" << idx << endl;
-        cout << "Name: " << master[idx].name << endl;
-        cout << "Age: " << master[idx].age << endl;
-        cout << "Grades: " << endl;
-        for (size_t i = 0; i < master[idx].grades.size(); i++)
-           cout << master[idx].grades[i] << " ";
-        cout << endl << endl;
-    } 

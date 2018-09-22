@@ -1,0 +1,21 @@
+test1.txt:1.1.1.1:40|test2.txt:1.1.1.1:40
+
+get|hashvalue|filename:clientip:port
+
+/home/ritik/Os_Assignment2/test1.txt
+2.2.2.2:50
+3.3.3.3:3
+2534811
+95c1ac4ba7a83df25228
+
+
+g++ Chunk_Split_Merge.cpp Client.cpp -lssl -lcrypto -pthread
+
+g++ Tracker1.cpp -pthread
+
+Tracker
+./a.out 2.2.2.2:6000 3.3.3.3:55000 seederlist_file logfile
+
+
+Client
+./a.out 1.1.1.1:50000 2.2.2.2:60000 3.3.3.3:55000 logfile

@@ -24,9 +24,12 @@ string hash_value;
 int main(int argc, char *argv[])
 {
 
+	logmessage("Client program started \n");
+	// This thread will use it's client_ip and upload_port passed through command line to serve as a server.
 	thread T1(handleClient_act_as_server);
 	T1.detach();
 
+	// chunksize (as we need to divide files into 512 KB)
 	chunksize = 524288;
 	if (argv[1] != NULL)
 		Initialize_Client_Params(argv);
@@ -35,6 +38,10 @@ int main(int argc, char *argv[])
 	struct sockaddr_in serverAddr;
 	char buffer[1024];
 
+	/*
+	1. Create socket
+	2. Connect to Server using server ip and listen port. 
+	*/
 	clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if (clientSocket < 0)
 	{
@@ -56,10 +63,12 @@ int main(int argc, char *argv[])
 	}
 	printf("2. Connected to Server %s %d\n", inet_ntoa(serverAddr.sin_addr), ntohs(serverAddr.sin_port));
 
+	logmessage("Client connected to server \n");
 	menu_driven_interface();
 	string input;
 	while (true)
 	{
+		// To accept the input from user for the functionality.
 		getline(cin, input);
 		vector<string> input_commands = split(input, ' ');
 		if (input_commands[0] == "share")
@@ -74,6 +83,10 @@ int main(int argc, char *argv[])
 		{
 			get_file(clientSocket, input_commands[0], input_commands[1], input_commands[2]);
 		}
+		else if (input_commands[0] == "show")
+		{
+			show_downloads();
+		}
 
 		recv(clientSocket, buffer, 1024, 0);
 		if (input_commands[0] == "get")
@@ -87,6 +100,8 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+// To act as a server for different clients.
+// Client_ip and upload_port is used here.
 void handleClient_act_as_server()
 {
 	int sockfd;
@@ -144,6 +159,7 @@ void handleClient_act_as_server()
 	close(sockfd);
 }
 
+// To connect to clients for requesting the files to be downloaded.
 void non_blocking_client(string file_to_download, string ip_of_client_to_download, int port_to_download)
 {
 	int clientSocket, ret;
@@ -172,6 +188,7 @@ void non_blocking_client(string file_to_download, string ip_of_client_to_downloa
 	printf("2. Connected to Client Server %s %d\n", inet_ntoa(serverAddr.sin_addr), ntohs(serverAddr.sin_port));
 }
 
+// After getting seeder list , calling threads to connect to Ip and Port.
 void fire_threads_for_seeder_list(char *buffer)
 {
 	string temp = buffer;
@@ -186,6 +203,7 @@ void fire_threads_for_seeder_list(char *buffer)
 
 void send_message(int clientSocket, const char *message, int size)
 {
+	logmessage("Sending buffer from client to server \n");
 	char buffer[1024];
 	strcpy(buffer, message);
 	if (send(clientSocket, buffer, 1024, 0) < 0)
@@ -195,6 +213,7 @@ void send_message(int clientSocket, const char *message, int size)
 
 void receive_message(int clientSocket, const char *message, int size)
 {
+	logmessage("Receving buffer from server to client \n");
 	cout << "Client Recv " << message << "\n";
 	char buffer[1024];
 	strcpy(buffer, message);
@@ -273,23 +292,36 @@ void menu_driven_interface()
 	int choice;
 	cout << "Choose among the below options : "
 		 << "\n";
-	cout << "1. (share) To share a file "
+	cout << "1. share <filepath> <mtorrent_filename> ; To share a file "
 		 << "\n";
-	cout << "2. (get)  To download a remote file "
+	cout << "2. get <mtorrent path> <des path> ; To download a remote file "
 		 << "\n";
 	cout << "3. Seed a downloaded file "
 		 << "\n";
-	cout << "4. (show) Show Downloads "
+	cout << "4. show downloads ; Show Downloads "
 		 << "\n";
-	cout << "5. (remove) Remove a shared file "
+	cout << "5. (remove filename.mtorrent) ; Remove a shared file "
 		 << "\n";
-	cout << "6. (close) Close application "
+	cout << "6. close ; Close application "
 		 << "\n";
 }
 
-// share <local file path> <filename>.mtorrent
+/*
+1) To create the hash by dividing files into chunks of 512 KB.
+2) Make a mtorrent file by adding in format 
+<filepath>
+tracker1_ip:port1
+tracker2_ip:port2
+3.3.3.3:3
+<filesize>
+Hash of file
+3) To send a buffer to server which includes
+command , hash of hash of file , filepath , client_ip , upload_port
+*/
+
 void share_to_tracker(int ret, string command, string filepath, string torrent_filename)
 {
+	logmessage("Sharing to the tracker \n");
 	filepath = parse_file_path(filepath);
 	string chunk_name = "chunk";
 	download_files.push_back("D " + filepath);
@@ -303,9 +335,13 @@ void share_to_tracker(int ret, string command, string filepath, string torrent_f
 	send_message(ret, to_share.c_str(), 1024);
 }
 
-// get <path to .mtorrent file> <destination path>
+/* 
+When Client gives get command. It will get hash from the mtorrent file.
+After taking hash of hash of file , send a request to Tracker to get mtorrent file
+*/
 void get_file(int ret, string command, string torrent_filepath, string destination_path)
 {
+	logmessage("Sending buffer from client to server hash of hash of file \n");
 	torrent_filepath = parse_file_path(torrent_filepath);
 	string hash_of_file;
 	ifstream file;
@@ -329,7 +365,7 @@ void seeding_downloaded_file()
 {
 }
 
-// show downloads
+// For Client show list of downloaded and downloading files which is in vector downloaded_files.
 void show_downloads()
 {
 	cout << "Files downloaded or downloading are \n";
@@ -337,7 +373,7 @@ void show_downloads()
 		cout << download_files[i] << "\n";
 }
 
-// r​emove <filename.mtorrent>
+// To remove mtorrent file and delete corresponding Client entry in Tracker (Map and File(Persistent database))
 void remove_shared_file(int ret, string command, string torrent_filename)
 {
 	torrent_filename = parse_file_path(torrent_filename);
@@ -346,6 +382,3 @@ void remove_shared_file(int ret, string command, string torrent_filename)
 void close_application()
 {
 }
-
-//The in_port_t and in_addr_t types , in_addr structure are defined as in <netinet/in.h>.
-/* 	bcopy((char *)server->h_addr,(char *)&serv_addr.sin_addr.s_addr,server->h_length); */

@@ -7,6 +7,7 @@
 #ifndef MiniTorrentClient_LIB
 #define MiniTorrentClient_LIB
 
+/* Header files needed for Client */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,16 +17,19 @@
 #include <thread>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <iostream>
+
+/* Header files needed for creating sha1 and the connection part in socket */
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
-#define SHA_DIGEST_LENGTH 20
 #include <openssl/sha.h>
-#include <iostream>
+
 using namespace std;
 
+#define SHA_DIGEST_LENGTH 20
 #define PORT 60001
 
+/* Variables , Maps and Vectors used for Client program */
 extern int chunksize;
 extern char hashString[41];
 extern string hash_value;
@@ -40,6 +44,7 @@ extern string logfile_name;
 extern map<string, vector<string>> seeder_list;
 extern vector<string> download_files;
 
+/* Functions for the Client */
 void handleClient_act_as_server();
 void send_message(int, const char *, int);
 void receive_message(int, const char *, int);
@@ -57,6 +62,7 @@ void non_blocking_client(string, string, int);
 void fire_threads_for_seeder_list(char *);
 string parse_file_path(string);
 
+/* Functions for breaking into chunks , getting sha value and making mtorrent file */
 void create_sha1(const unsigned char *);
 int get_file_size(string);
 void chunkfile(const char *, string);

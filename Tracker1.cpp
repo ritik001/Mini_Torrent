@@ -25,6 +25,12 @@ int main(int argc, char *argv[])
 
     if (argv[1] != NULL)
         Initialize_Server_Params(argv);
+    else
+		logfile_name = "default_logfile";
+
+    seederlist_file="seeder_file";
+
+    initialize_seeder_list();
 
     int sockfd;
     int ret;
@@ -99,7 +105,7 @@ void receive_message(int sockfd, char *message, int size)
     recv(sockfd, message, size, 0);
 }
 
-void logmessage(char *message)
+void logmessage(string message)
 {
     FILE *fptr;
     fptr = fopen(logfile_name.c_str(), "r");
@@ -110,7 +116,7 @@ void logmessage(char *message)
     if (fptr == NULL)
         cout << "log file not opened"
              << "\n";
-    fprintf(fptr, "%s\n", message);
+    fprintf(fptr, "%s\n", message.c_str());
     fclose(fptr);
 }
 
@@ -228,11 +234,8 @@ void share(string hash_name, string value)
 string , set<string>
 for hash_value , delete file entry for called client.
 */
-void remove(string param)
+void remove(string hash_name , string value)
 {
-    int index = param.find('|') + 1;
-    string hash_name = param.substr(0, index);
-    string value = param.substr(index);
 
     auto it = seederlist.find(hash_name);
     if (it != seederlist.end())
@@ -289,15 +292,16 @@ It will populate map with the values.
 void initialize_seeder_list()
 {
     logmessage("Initializing map with the seederlist_file \n");
+    seederlist_file=parse_file_path(seederlist_file);
     ifstream seeder_file;
     seeder_file.open(seederlist_file);
     string seeder_info;
 
     while (getline(seeder_file, seeder_info))
     {
-        int index = seeder_info.find(' ') + 1;
+        int index = seeder_info.find('|');
         string hash_name = seeder_info.substr(0, index);
-        string value = seeder_info.substr(index);
+        string value = seeder_info.substr(index+1);
 
         auto map_itr = seederlist.find(hash_name);
         if (map_itr != seederlist.end())
@@ -314,6 +318,21 @@ void initialize_seeder_list()
             seederlist[hash_name] = tracker_list;
         }
     }
+
+/* Testing part for the writing into map from seeder list.
+    cout << "Size of map is " << seederlist.size() << "\n";
+
+    for(auto it=seederlist.begin();it!=seederlist.end();it++)
+    {
+        cout << "Let's Print" << "\n";
+        cout << it->first << "\n";
+        set<string> tracker_list = it->second;
+        for(auto itr=tracker_list.begin();itr!=tracker_list.end();itr++)
+            cout << *itr << " ";
+        cout << "\n";
+    }
+*/
+
     seeder_file.close();
 }
 
@@ -322,11 +341,14 @@ void handleClient(int newSocket)
 {
     char buffer[1024];
     string temp = "";
+    logmessage("In the tracker buffer to share,remove or get");
     cout << "In Tracker buffer "
          << "\n";
     if (recv(newSocket, buffer, 1024, 0) < 0)
         cout << "error in receiving "
              << "\n";
+    else
+        cout << "ACK on tracker. Received client request \n";
 
     vector<string> input_commands = split(buffer, '|');
     if (input_commands[0] == "share")
@@ -335,11 +357,11 @@ void handleClient(int newSocket)
     }
     else if (input_commands[0] == "remove")
     {
-        remove(input_commands[1]);
+        remove(input_commands[1],input_commands[2]);
     }
     else if (input_commands[0] == "get")
     {
-        string temp = Seed_List(input_commands[1], input_commands[2]);
+        temp = Seed_List(input_commands[1], input_commands[2]);
     }
     if (input_commands[0] != "get")
     {

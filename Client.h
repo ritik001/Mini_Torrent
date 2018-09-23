@@ -10,8 +10,11 @@
 /* Header files needed for Client */
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+#include <vector>
+#include <fstream>
+#include <sstream>
+#include <limits.h>
 #include <bits/stdc++.h>
 #include <string.h>
 #include <thread>
@@ -27,7 +30,7 @@
 using namespace std;
 
 #define SHA_DIGEST_LENGTH 20
-#define PORT 60001
+#define PORT 62233
 
 /* Variables , Maps and Vectors used for Client program */
 extern int chunksize;
@@ -41,7 +44,6 @@ extern string tracker_ip_2;
 extern int tracker_port_2;
 extern string logfile_name;
 
-extern map<string, vector<string>> seeder_list;
 extern vector<string> download_files;
 
 /* Functions for the Client */
@@ -56,7 +58,7 @@ void get_file(int, string, string, string);
 void seeding_downloaded_file();
 void show_downloads();
 void remove_shared_file(int, string, string);
-void logmessage(char *);
+void logmessage(string);
 void close_application();
 void non_blocking_client(string, string, int);
 void fire_threads_for_seeder_list(char *);

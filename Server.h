@@ -27,7 +27,7 @@ string tracker1_socket="127.0.0.1:4444";
 string tracker2_socket="127.0.0.1:5555";
 */
 
-#define PORT 60001
+#define PORT 62233
 
 /* Variables , Maps and Vectors used for Server program */
 extern string client_ip;
@@ -45,15 +45,13 @@ void init_extern_params();
 void Initialize_Server_Params(char **);
 void Torrent_Tracker_function();
 void share(string, string);
-void remove(string);
+void remove(string,string);
 string Seed_List(string, string);
 vector<string> split(const string &, char);
 void initialize_seeder_list();
 void handleClient(int);
-void logmessage(char *);
+void logmessage(string);
 string parse_file_path(string);
-
-
 
 /* struct seeder
 {

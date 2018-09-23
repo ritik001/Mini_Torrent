@@ -153,7 +153,7 @@ void Initialize_Server_Params(char *argv[])
     else
         logfile_name = "default_logfile";
 
-    //seeder list file for seeder_list map
+    //seederlist_file for seeder_list map
 }
 
 string parse_file_path(string path)
@@ -173,9 +173,17 @@ void Torrent_Tracker_function()
 {
 }
 
+/*
+1) Add corresponding entry in the map in format
+string , set<string>
+hash_value , ritik/Os_Assignment2/test1.txt:1.1.1.1:40
+2)Add in seederlist_file.
+Format in file
+hash_value|ritik/Os_Assignment2/test1.txt:1.1.1.1:40
+*/
 void share(string hash_name, string value)
 {
-    cout << "in share "
+    cout << "In Tracker Share "
          << "\n";
     auto map_itr = seederlist.find(hash_name);
     if (map_itr != seederlist.end())
@@ -191,11 +199,11 @@ void share(string hash_name, string value)
         tracker_list.insert(value);
         seederlist[hash_name] = tracker_list;
     }
-    cout << "hello dude "
-         << "\n";
+
     string temp = hash_name + "|" + value;
     cout << temp << "\n";
-    cout << "Yo man!! " << seederlist_file << "\n";
+
+    //   cout << "Seeder File name : " << seederlist_file << "\n";
 
     fstream file;
     file.open(seederlist_file.c_str(), ios::in);
@@ -212,9 +220,15 @@ void share(string hash_name, string value)
     file << temp << "\n";
 
     file.close();
+    logmessage("Shared the hash name and client details \n");
 }
 
-void remove(string param, string param1)
+/*
+1) Delete corresponding entry in the map in format
+string , set<string>
+for hash_value , delete file entry for called client.
+*/
+void remove(string param)
 {
     int index = param.find('|') + 1;
     string hash_name = param.substr(0, index);
@@ -237,8 +251,14 @@ void remove(string param, string param1)
     {
         cout << "No File found with the given hash value to remove \n";
     }
+    logmessage("Removed entry for the request file and client \n");
 }
 
+/*
+1) Return seed list as string in format
+test1.txt:1.1.1.1:40|test2.txt:2.2.2.2:50
+hash_value , ritik/Os_Assignment2/test1.txt:1.1.1.1:40
+*/
 string Seed_List(string hash, string client_details)
 {
     string seed_list_of_clients = "";
@@ -257,14 +277,18 @@ string Seed_List(string hash, string client_details)
         }
     }
     seed_list_of_clients = seed_list_of_clients.substr(0, seed_list_of_clients.length());
+    logmessage("Sending the seeder list file \n");
 
     return seed_list_of_clients;
-
-    // 22233445 hash    result file:123:34343:3434|343434
 }
 
+/*
+When program starts , and if seederlist_file exists ;
+It will populate map with the values.
+*/
 void initialize_seeder_list()
 {
+    logmessage("Initializing map with the seederlist_file \n");
     ifstream seeder_file;
     seeder_file.open(seederlist_file);
     string seeder_info;
@@ -291,10 +315,9 @@ void initialize_seeder_list()
         }
     }
     seeder_file.close();
-
-    // From seeder file writing into map seerder list
 }
 
+// A separate thread is fired to handle the functions
 void handleClient(int newSocket)
 {
     char buffer[1024];
@@ -312,7 +335,7 @@ void handleClient(int newSocket)
     }
     else if (input_commands[0] == "remove")
     {
-        remove(input_commands[1], input_commands[2]);
+        remove(input_commands[1]);
     }
     else if (input_commands[0] == "get")
     {

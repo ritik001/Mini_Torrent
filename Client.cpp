@@ -6,15 +6,14 @@
 
 #include "Client.h"
 
-int upload_port;
 string tracker_ip_1;
 int tracker_port_1;
 string tracker_ip_2;
 int tracker_port_2;
 string logfile_name;
 string client_ip;
+int upload_port;
 
-map<string, vector<string>> seeder_list;
 vector<string> download_files;
 
 int chunksize;
@@ -24,16 +23,20 @@ string hash_value;
 int main(int argc, char *argv[])
 {
 
-	logmessage("Client program started \n");
-	// This thread will use it's client_ip and upload_port passed through command line to serve as a server.
-	thread T1(handleClient_act_as_server);
-	T1.detach();
-
 	// chunksize (as we need to divide files into 512 KB)
 	chunksize = 524288;
 	if (argv[1] != NULL)
 		Initialize_Client_Params(argv);
+	else
+		logfile_name = "default_logfile";
 
+	// This thread will use it's client_ip and upload_port passed through command line to serve as a server.
+	thread T1(handleClient_act_as_server);
+	T1.detach();
+
+
+
+	logmessage("Client program started \n");
 	int clientSocket, ret;
 	struct sockaddr_in serverAddr;
 	char buffer[1024];
@@ -89,14 +92,19 @@ int main(int argc, char *argv[])
 		}
 
 		recv(clientSocket, buffer, 1024, 0);
+
+		// get should be a non-blocking call
 		if (input_commands[0] == "get")
 		{
-			fire_threads_for_seeder_list(buffer);
+			cout << "ACK . Received seeder list on client side \n";
+			cout << "Seeder List " << buffer << "\n";
+			thread T3(fire_threads_for_seeder_list,buffer);
+			T3.detach();
 		}
-		/* 	   cout << buffer << "\n"; */
+		else
+			cout << "ACK for recieved on client side " << buffer << "\n";
 		memset(buffer, '\0', sizeof(buffer));
 	}
-
 	return 0;
 }
 
@@ -104,6 +112,9 @@ int main(int argc, char *argv[])
 // Client_ip and upload_port is used here.
 void handleClient_act_as_server()
 {
+	client_ip="127.0.0.1";
+	upload_port=64000;
+
 	int sockfd;
 	int ret;
 	struct sockaddr_in server_addr;
@@ -195,10 +206,15 @@ void fire_threads_for_seeder_list(char *buffer)
 	vector<string> received_seeder_list = split(temp, '|');
 	for (int i = 0; i < received_seeder_list.size(); i++)
 	{
+		int port_of_client;
 		vector<string> v2 = split(received_seeder_list[i], ':');
-		thread T2(non_blocking_client, v2[0], v2[1], v2[2]);
+		stringstream str1(v2[2]);
+    	str1 >> port_of_client;
+		thread T2(non_blocking_client, v2[0], v2[1], port_of_client);
 		T2.detach();
 	}
+	while(true)
+	{}
 }
 
 void send_message(int clientSocket, const char *message, int size)
@@ -220,7 +236,7 @@ void receive_message(int clientSocket, const char *message, int size)
 	recv(clientSocket, buffer, size, 0);
 }
 
-void logmessage(char *message)
+void logmessage(string message)
 {
 	FILE *fptr;
 	fptr = fopen(logfile_name.c_str(), "r");
@@ -231,7 +247,7 @@ void logmessage(char *message)
 	if (fptr == NULL)
 		cout << "log file not opened "
 			 << "\n";
-	fprintf(fptr, "%s\n", message);
+	fprintf(fptr, "%s\n", message.c_str());
 	fclose(fptr);
 }
 
@@ -315,15 +331,14 @@ tracker2_ip:port2
 3.3.3.3:3
 <filesize>
 Hash of file
-3) To send a buffer to server which includes
-command , hash of hash of file , filepath , client_ip , upload_port
 */
 
 void share_to_tracker(int ret, string command, string filepath, string torrent_filename)
 {
 	logmessage("Sharing to the tracker \n");
 	filepath = parse_file_path(filepath);
-	string chunk_name = "chunk";
+	cout << "Fp " << filepath << "\n";
+	string chunk_name = filepath;
 	download_files.push_back("D " + filepath);
 	chunkfile(filepath.c_str(), chunk_name);
 	cout << hash_value << "\n";
@@ -343,6 +358,7 @@ void get_file(int ret, string command, string torrent_filepath, string destinati
 {
 	logmessage("Sending buffer from client to server hash of hash of file \n");
 	torrent_filepath = parse_file_path(torrent_filepath);
+/* 	destination_path = parse_file_path(destination_path); */
 	string hash_of_file;
 	ifstream file;
 	int i = 0;
@@ -377,6 +393,26 @@ void show_downloads()
 void remove_shared_file(int ret, string command, string torrent_filename)
 {
 	torrent_filename = parse_file_path(torrent_filename);
+	ifstream file;
+	string filepath="";
+	string hash_of_file="";
+	int i=0;
+	file.open(torrent_filename, ios::in);
+	while (getline(file, torrent_filename))
+	{
+		i = i + 1;
+		if(i==1)
+			filepath=torrent_filename;
+		if (i == 5)
+			break;
+	}
+	const unsigned char *buffer_temp = reinterpret_cast<const unsigned char *>(hash_of_file.c_str());
+	hash_of_file = create_sha1_of_sha1(buffer_temp);
+	cout << "hash of hash in file " << hash_of_file << "\n";
+	string to_share = command + "|" + hash_of_file + "|" + filepath + ":" + client_ip + ":" + to_string(upload_port);
+	remove(torrent_filename.c_str());
+	send_message(ret, to_share.c_str(), 1024);	
+
 }
 
 void close_application()

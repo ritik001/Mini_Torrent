@@ -6,6 +6,7 @@
 
 #include "Client.h"
 
+// tellg function to get the size of file
 int get_file_size(string name)
 {
     int file_size;
@@ -23,8 +24,12 @@ int get_file_size(string name)
     return file_size;
 }
 
+// splitting a file into chunks and generating hash.
 void chunkfile(const char *filename_path, string chunkname)
 {
+    logmessage("In Chunk method to divide and get hash \n");
+    cout << filename_path << "\n";
+    cout << chunkname << "\n";
     ifstream file;
     file.open(filename_path, ios::in);
     if (file.is_open())
@@ -38,7 +43,7 @@ void chunkfile(const char *filename_path, string chunkname)
         {
             fullchunkname = "";
             id = id + 1;
-            fullchunkname = chunkname + "/" + to_string(id);
+            fullchunkname = chunkname + "_chunk_" + to_string(id);
 
             output.open(fullchunkname.c_str(), ios::out);
             if (output.is_open())
@@ -47,8 +52,10 @@ void chunkfile(const char *filename_path, string chunkname)
                 output.write(buffer, file.gcount());
                 output.close();
             }
+            cout << "Name " << fullchunkname << "\n";
             const unsigned char *buffer_temp = reinterpret_cast<const unsigned char *>(buffer);
             create_sha1(buffer_temp);
+            remove(fullchunkname.c_str());
         }
 
         delete (buffer);
@@ -60,6 +67,7 @@ void chunkfile(const char *filename_path, string chunkname)
     }
 }
 
+// creating sha1 for the buffer digest
 void create_sha1(const unsigned char *buffer)
 {
     string res;
@@ -73,6 +81,7 @@ void create_sha1(const unsigned char *buffer)
     hash_value = hash_value + temp;
 }
 
+// To generate sha of hash value of file
 string create_sha1_of_sha1(const unsigned char *buffer)
 {
     unsigned char digest[20];
@@ -101,6 +110,7 @@ void add_mtorrent_file(string filename, string mtorrent_filename)
     }
     out.close();
 }
+
 
 /* void joinFile(char *chunkName, char *fileOutput) {
 	string fileName;

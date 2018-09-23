@@ -6,6 +6,7 @@
 
 #include "Client.h"
 
+// tellg function to get the size of file
 int get_file_size(string name)
 {
     int file_size;
@@ -23,6 +24,7 @@ int get_file_size(string name)
     return file_size;
 }
 
+// splitting a file into chunks and generating hash.
 void chunkfile(const char *filename_path, string chunkname)
 {
     ifstream file;
@@ -60,6 +62,7 @@ void chunkfile(const char *filename_path, string chunkname)
     }
 }
 
+// creating sha1 for the buffer digest
 void create_sha1(const unsigned char *buffer)
 {
     string res;
@@ -73,6 +76,7 @@ void create_sha1(const unsigned char *buffer)
     hash_value = hash_value + temp;
 }
 
+// To generate sha of hash value of file
 string create_sha1_of_sha1(const unsigned char *buffer)
 {
     unsigned char digest[20];
@@ -101,6 +105,7 @@ void add_mtorrent_file(string filename, string mtorrent_filename)
     }
     out.close();
 }
+
 
 /* void joinFile(char *chunkName, char *fileOutput) {
 	string fileName;

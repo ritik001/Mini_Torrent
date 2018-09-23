@@ -1,0 +1,19 @@
+{
+    "files.associations": {
+        "system_error": "cpp",
+        "vector": "cpp",
+        "iostream": "cpp",
+        "iosfwd": "cpp",
+        "thread": "cpp",
+        "istream": "cpp",
+        "array": "cpp",
+        "deque": "cpp",
+        "forward_list": "cpp",
+        "list": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp",
+        "initializer_list": "cpp",
+        "valarray": "cpp",
+        "string_view": "cpp"
+    }
+}
